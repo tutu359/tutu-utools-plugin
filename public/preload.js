@@ -4,15 +4,24 @@ const crypto = require("node:crypto");
 const os = require("node:os");
 const { execFile } = require("node:child_process");
 
-const hashAlgorithms = ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"];
+const hashAlgorithms = [
+  ["md5", "MD5"],
+  ["sha1", "SHA-1"],
+  ["sha224", "SHA-224"],
+  ["sha256", "SHA-256"],
+  ["sha384", "SHA-384"],
+  ["sha512", "SHA-512"],
+];
 
 function hashText(text) {
-  return Object.fromEntries(
-    hashAlgorithms.map((algorithm) => [
-      algorithm,
-      crypto.createHash(algorithm).update(String(text), "utf8").digest("hex"),
-    ]),
-  );
+  return hashAlgorithms.map(([id, label]) => ({
+    id,
+    label,
+    value: crypto
+      .createHash(id)
+      .update(String(text), "utf8")
+      .digest("hex"),
+  }));
 }
 
 function executeShell(command) {

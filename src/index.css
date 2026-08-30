@@ -29,12 +29,11 @@ button {
   cursor: pointer;
 }
 
-.app-shell {
+.tool-shell {
   min-height: 100vh;
   padding: 20px;
 }
 
-.toolbox,
 .tool-page {
   width: min(100%, 720px);
   margin: 0 auto;

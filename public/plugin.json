@@ -15,12 +15,8 @@
     {
       "code": "hash",
       "explain": "进入哈希计算",
-      "cmds": ["hash"]
-    },
-    {
-      "code": "hash-over",
-      "explain": "对选中文字进行哈希计算",
       "cmds": [
+        "hash",
         {
           "type": "over",
           "label": "哈希计算",

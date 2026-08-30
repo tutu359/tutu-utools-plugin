@@ -13,7 +13,11 @@
 ├── src/
 │   ├── App.jsx      # React 页面组件
 │   ├── index.css
-│   └── main.jsx     # React 挂载入口
+│   ├── main.jsx     # React 挂载入口
+│   └── tools/       # 工具界面、注册表与页面包装组件
+├── tests/
+│   └── app.test.jsx # 插件界面集成测试
+├── CONTEXT.md       # 领域词汇与产品约定
 ├── index.html       # Vite HTML 入口
 ├── vite.config.js
 └── package.json
