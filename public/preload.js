@@ -170,14 +170,25 @@ function runShellCommand(command, callbackSetList) {
 
 // 工具箱首页：列出全部工具，回车跳转
 // 工具箱首页：列出全部工具，回车直接进入目标工具的列表模式（无底座二次回车）
+// 工具箱首页：列出全部工具，回车进入目标工具。
+// 底座把子输入框的 search/select 事件固定派发给「进入时的 feature 处理器」——
+// 因此 toolbox 扮演路由器：维护「当前激活工具」，把 search/select 委托给当前工具的处理器。
+const state = { currentTool: "toolbox" };
+
 const toolboxHandler = {
   mode: "list",
   args: {
     placeholder: "选择一个工具",
     enter(_action, callbackSetList) {
+      state.currentTool = "toolbox";
       callbackSetList(toolboxItems());
     },
     search(_action, searchWord, callbackSetList) {
+      const current = window.exports[state.currentTool];
+      if (state.currentTool !== "toolbox" && current) {
+        current.args.search(_action, searchWord, callbackSetList);
+        return;
+      }
       const word = String(searchWord ?? "").trim();
       callbackSetList(
         toolboxItems().filter((item) =>
@@ -186,12 +197,18 @@ const toolboxHandler = {
       );
     },
     select(_action, itemData, callbackSetList) {
-      // 同插件内直接调用目标工具的模板处理器：列表原地切换为目标工具，无需二次回车
+      const current = window.exports[state.currentTool];
+      if (state.currentTool !== "toolbox") {
+        // 已在某个工具内：把选中事件转发给当前工具
+        return current.args.select(_action, itemData, callbackSetList);
+      }
+      // 首页态：条目携带 code，切换当前工具后原地呈现目标工具的列表
       const handler = window.exports[itemData.code];
       if (!handler) return;
+      state.currentTool = itemData.code;
       window.utools.setSubInputValue("");
       handler.args.enter(
-        { code: itemData.code, type: "text", payload: itemData.payload },
+        { code: itemData.code, type: "text", payload: undefined },
         callbackSetList,
       );
     },
