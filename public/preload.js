@@ -155,15 +155,15 @@ function runShellCommand(command, callbackSetList) {
       });
       callbackSetList(lines);
       window.utools.setExpendHeight(260);
-    } else if (shellResult.exitCode !== 0) {
+    } else if (shellResult.exitCode === 0) {
+      // 无输出且成功：静默收工
+      window.utools.hideMainWindow();
+    } else {
       // 无输出但失败：只展示退出码，让失败可见
       callbackSetList([
         { title: String(shellResult.exitCode), description: "退出码" },
       ]);
       window.utools.setExpendHeight(260);
-    } else {
-      // 无输出且成功：静默收工
-      window.utools.hideMainWindow();
     }
   });
 }

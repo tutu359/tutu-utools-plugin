@@ -44,7 +44,9 @@ function loadPlugin() {
 
 let pluginWindow;
 
-function enterHash(action = { code: "hash", type: "text", payload: undefined }) {
+function enterHash(
+  action = { code: "hash", type: "text", payload: undefined },
+) {
   let listed = [];
   pluginWindow.exports.hash.args.enter(action, (items) => {
     listed = items;
