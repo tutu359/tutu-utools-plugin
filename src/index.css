@@ -1,6 +1,6 @@
 :root {
-  color: #f8fafc;
-  background: #1a1d2d;
+  color: #222;
+  background: #fff;
   font-family:
     -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
     sans-serif;
@@ -19,94 +19,64 @@ body {
 }
 
 button,
+input,
+textarea,
 code {
   font: inherit;
 }
 
-code {
-  overflow-wrap: anywhere;
-  color: #dbeafe;
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.82rem;
+button {
+  cursor: pointer;
 }
 
 .app-shell {
-  display: grid;
   min-height: 100vh;
-  align-content: center;
-  gap: 1.5rem;
-  padding: 2rem clamp(1.5rem, 6vw, 4rem);
-  background: linear-gradient(135deg, #2b2761 0%, #15535f 100%);
+  padding: 20px;
 }
 
-.welcome {
-  max-width: 44rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.5rem;
-  color: #a7f3d0;
-  font-size: 0.85rem;
-  font-weight: 650;
+.toolbox,
+.tool-page {
+  width: min(100%, 720px);
+  margin: 0 auto;
 }
 
 h1 {
   margin: 0;
-  font-size: 2.25rem;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: 22px;
+  line-height: 1.3;
 }
 
-.subtitle {
-  margin: 0.65rem 0 0;
-  color: #dbeafe;
+.toolbox-subtitle,
+.tool-description {
+  margin: 6px 0 16px;
+  color: #666;
+  font-size: 13px;
 }
 
-.status-grid,
-.next-steps {
-  width: min(100%, 44rem);
-  border: 1px solid rgb(255 255 255 / 20%);
-  border-radius: 8px;
-  background: rgb(15 23 42 / 28%);
-  box-shadow: 0 12px 36px rgb(15 23 42 / 18%);
-}
-
-.status-row {
+.tool-list {
   display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr);
-  gap: 1rem;
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 12%);
-  line-height: 1.5;
+  gap: 8px;
 }
 
-.status-row:last-child {
-  border-bottom: 0;
+.tool-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #222;
+  background: #fff;
+  text-align: left;
 }
 
-.status-row > span {
-  color: #bfdbfe;
-  font-size: 0.88rem;
+.tool-item:hover,
+.tool-item:focus-visible {
+  border-color: #888;
 }
 
-.next-steps {
-  padding: 0.85rem 1rem;
-  color: #e2e8f0;
-  font-size: 0.9rem;
-  line-height: 1.65;
-}
-
-.next-steps p {
-  margin: 0.2rem 0;
-}
-
-@media (max-width: 480px) {
-  .app-shell {
-    padding: 1.5rem;
-  }
-
-  .status-row {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-  }
+.tool-item span {
+  color: #888;
+  font-size: 12px;
 }

@@ -8,9 +8,37 @@
   },
   "features": [
     {
-      "code": "hello",
-      "explain": "我的第一个 uTools 插件功能",
-      "cmds": ["tutu插件", "hello"]
+      "code": "toolbox",
+      "explain": "打开 tutu 工具箱",
+      "cmds": ["tutu"]
+    },
+    {
+      "code": "hash",
+      "explain": "进入哈希计算",
+      "cmds": ["hash"]
+    },
+    {
+      "code": "hash-over",
+      "explain": "对选中文字进行哈希计算",
+      "cmds": [
+        {
+          "type": "over",
+          "label": "哈希计算",
+          "minLength": 1,
+          "maxLength": 100000
+        }
+      ]
+    },
+    {
+      "code": "sh",
+      "explain": "执行 Shell 命令",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "执行 Shell 命令",
+          "match": "^sh\\s+\\S.*$"
+        }
+      ]
     }
   ]
 }
