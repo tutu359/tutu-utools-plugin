@@ -185,15 +185,23 @@ const toolboxHandler = {
       );
     },
     select(_action, itemData) {
-      window.utools.redirect(itemData.title);
+      window.utools.redirect(itemData.keyword);
     },
   },
 };
 
 function toolboxItems() {
   return [
-    { title: "哈希计算", description: "实时计算 MD5 / SHA 哈希，回车复制" },
-    { title: "快速 Shell", description: "在搜索框内输入并执行 shell 命令" },
+    {
+      title: "哈希计算",
+      description: "实时计算 MD5 / SHA 哈希，回车复制",
+      keyword: "hash",
+    },
+    {
+      title: "快速 Shell",
+      description: "在搜索框内输入并执行 shell 命令",
+      keyword: "sh",
+    },
   ];
 }
 

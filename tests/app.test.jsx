@@ -249,4 +249,25 @@ describe("工具箱首页", () => {
     expect(names).toContain("快速 Shell");
     expect(names).not.toContain("工具箱");
   });
+
+  it("回车选择工具后跳转到对应的功能指令关键字", () => {
+    const redirected = [];
+    const savedRedirect = pluginWindow.utools.redirect;
+    pluginWindow.utools.redirect = (label) => {
+      redirected.push(label);
+      return true;
+    };
+
+    let listed = [];
+    pluginWindow.exports.toolbox.args.enter(
+      { code: "toolbox", type: "text", payload: undefined },
+      (items) => {
+        listed = items;
+      },
+    );
+    pluginWindow.exports.toolbox.args.select({}, listed[0], () => {});
+    pluginWindow.exports.toolbox.args.select({}, listed[1], () => {});
+
+    expect(redirected).toEqual(["hash", "sh"]);
+  });
 });
