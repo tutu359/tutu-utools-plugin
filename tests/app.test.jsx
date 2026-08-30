@@ -187,9 +187,7 @@ describe("快速 Shell 工具", () => {
     render(<App />);
     act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh false" }));
 
-    await waitFor(() =>
-      expect(screen.getByText("退出码：1")).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText("退出码：1")).toBeTruthy());
     expect(hiddenWindowCount).toBe(0);
   });
 
