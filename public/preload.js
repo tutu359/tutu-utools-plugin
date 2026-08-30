@@ -1,8 +1,8 @@
 // preload.js —— uTools 插件的本地能力层。
 // 规范：CommonJS；代码不能打包、压缩或混淆，必须保持清晰可读。
-const crypto = require("node:crypto");
-const os = require("node:os");
-const { execFile } = require("node:child_process");
+const crypto = require("crypto");
+const os = require("os");
+const { execFile } = require("child_process");
 
 const hashAlgorithms = [
   ["md5", "MD5"],

@@ -109,10 +109,7 @@ describe("重复进入工具", () => {
 describe("plugin.json 入口声明", () => {
   it("匹配指令的正则必须是斜杠包裹的正则字面量格式", () => {
     const pluginJson = JSON.parse(
-      fs.readFileSync(
-        path.join(process.cwd(), "public/plugin.json"),
-        "utf8",
-      ),
+      fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
     );
 
     const matchValues = pluginJson.features.flatMap((feature) =>
@@ -130,10 +127,7 @@ describe("plugin.json 入口声明", () => {
 
   it("over 匹配指令的 maxLength 不超过官方上限", () => {
     const pluginJson = JSON.parse(
-      fs.readFileSync(
-        path.join(process.cwd(), "public/plugin.json"),
-        "utf8",
-      ),
+      fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
     );
 
     for (const feature of pluginJson.features) {
@@ -143,6 +137,26 @@ describe("plugin.json 入口声明", () => {
         }
       }
     }
+  });
+});
+
+describe("诊断条", () => {
+  it("页面底部显示服务层、uTools 接口与版本状态", () => {
+    window.utools.getUtoolsVersion = () => "6.1.0";
+    render(<App />);
+    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
+
+    expect(screen.getByText(/本地服务层：已加载/)).toBeTruthy();
+    expect(screen.getByText(/uTools 接口：已连接/)).toBeTruthy();
+    expect(screen.getByText(/uTools 版本：6\.1\.0/)).toBeTruthy();
+  });
+
+  it("服务层未加载时诊断条明确标出", () => {
+    delete window.services;
+    render(<App />);
+    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
+
+    expect(screen.getByText(/本地服务层：未加载/)).toBeTruthy();
   });
 });
 
