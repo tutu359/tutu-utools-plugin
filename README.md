@@ -16,7 +16,8 @@
 
 ```text
 public/plugin.json    # uTools 入口声明（features；模板模式无 main 字段）
-public/preload.js     # 核心：本地能力层（window.services）+ 各工具模板处理器（window.exports）
+public/preload.js     # 装配层：加载能力层与工具处理器、注入平台依赖（utools 以懒函数注入）
+public/tools/         # 每个工具一个文件：services.js（纯 Node 能力层）、hash.js、shell.js、toolbox.js
 public/package.json   # {"type":"commonjs"} —— preload 正常加载的前提，勿删
 tests/app.test.jsx    # vitest：vm 加载 preload，直接驱动模板处理器，只断言外部行为
 src/                  # 旧 React 自定义界面（模板模式改造后休眠，仅存档）
@@ -35,9 +36,11 @@ pnpm test
 
 ## 加一个新工具（流水线）
 
-1. `public/preload.js`：`window.exports` 增加一个键（`mode` 按工具性质选 `list` / `none` / `doc`），写好 `enter` / `search` / `select`；
-2. `public/plugin.json`：`features` 增加一条（`code` 唯一，关键字只用英文）；
-3. `toolboxItems()` 加一行，让 `tutu` 首页能跳转过去。
+1. `public/tools/` 新建一个文件：导出 `create({ services, utools, getExports })` 工厂，返回模板处理器（`mode` 选 `list` / `none` / `doc`），并导出 `meta`（标题 + 描述，首页自动显示）；
+2. `public/preload.js`：`require` 并注册到 `window.exports`（code 与 plugin.json 一致）；
+3. `public/plugin.json`：`features` 增加一条（`code` 唯一，关键字只用英文）。
+
+首页列表自动从处理器 meta 派生，无需改 toolbox。
 
 ## 关键约定（真机踩坑实录，改动前必读）
 

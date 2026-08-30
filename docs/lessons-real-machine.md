@@ -60,6 +60,11 @@ sh 从首页进入且无命令时返回 `[]`，用户面对一片空白（placeh
 
 select 触发异步执行（child_process promise）后**同步断言**，必然竞态失败。等待 promise 或 `waitFor` 后再断言。
 
+### 2.8 preload 拆文件后的两个模块加载事实
+
+- preload 内部 `require("./tools/xxx.js")` 相对 **preload.js 自己的位置**解析（真机与 node 测试都需要把 require 基准指向 preload.js 所在目录，否则工具模块静默加载失败）；
+- 工具模块经 Node require 加载后，作用域里**没有 window 全局**（真机 preload 领域有，测试的 node require 没有）—— 工具模块不能直接摸 `window.utools`，平台 API 必须由装配层以懒函数注入，事件触发时才解引用。
+
 ### 2.7 测试替身要覆盖被测代码用到的全部 API
 
 假 `window.utools` 缺 `setSubInputValue` 时，真机功能正常但测试崩；反过来，测试通过 ≠ 真机通过（§1.3 的假切换就是「测试绕过了底座事件派发」的盲区）。**测试绿了仍需真机冒烟**，尤其是涉及底座派发行为的改动。
