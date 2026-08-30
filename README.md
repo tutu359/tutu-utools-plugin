@@ -16,8 +16,9 @@
 
 ```text
 public/plugin.json    # uTools 入口声明（features；模板模式无 main 字段）
-public/preload.js     # 装配层：加载能力层与工具处理器、注入平台依赖（utools 以懒函数注入）
-public/tools/         # 每个工具一个文件（能力 + 处理器 + meta 自包含）：hash.js、shell.js、toolbox.js
+public/preload.js     # 装配层：加载工具处理器、注入平台依赖（utools 以懒函数注入）
+public/toolbox.js     # 工具箱首页/路由器（不属于工具，不进 tools/）
+public/tools/         # 只放具体工具，一工具一文件（能力 + 处理器 + meta 自包含）：hash.js、shell.js
 public/package.json   # {"type":"commonjs"} —— preload 正常加载的前提，勿删
 tests/app.test.jsx    # vitest：vm 加载 preload，直接驱动模板处理器，只断言外部行为
 src/                  # 旧 React 自定义界面（模板模式改造后休眠，仅存档）
