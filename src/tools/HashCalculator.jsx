@@ -1,8 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ToolPage from "./ToolPage.jsx";
 
 export default function HashCalculator({ entryType, payload, entrySequence }) {
   const [text, setText] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [entrySequence]);
 
   useEffect(() => {
     if (entryType === "over") {
@@ -26,6 +31,7 @@ export default function HashCalculator({ entryType, payload, entrySequence }) {
         </label>
         <textarea
           id="hash-input"
+          ref={inputRef}
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="请输入文本"

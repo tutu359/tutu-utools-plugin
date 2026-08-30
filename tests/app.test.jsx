@@ -106,6 +106,46 @@ describe("重复进入工具", () => {
   });
 });
 
+describe("plugin.json 入口声明", () => {
+  it("匹配指令的正则必须是斜杠包裹的正则字面量格式", () => {
+    const pluginJson = JSON.parse(
+      fs.readFileSync(
+        path.join(process.cwd(), "public/plugin.json"),
+        "utf8",
+      ),
+    );
+
+    const matchValues = pluginJson.features.flatMap((feature) =>
+      feature.cmds
+        .filter((cmd) => typeof cmd === "object" && cmd.match)
+        .map((cmd) => cmd.match),
+    );
+
+    expect(matchValues.length).toBeGreaterThan(0);
+    for (const match of matchValues) {
+      expect(match.startsWith("/")).toBe(true);
+      expect(match.endsWith("/")).toBe(true);
+    }
+  });
+
+  it("over 匹配指令的 maxLength 不超过官方上限", () => {
+    const pluginJson = JSON.parse(
+      fs.readFileSync(
+        path.join(process.cwd(), "public/plugin.json"),
+        "utf8",
+      ),
+    );
+
+    for (const feature of pluginJson.features) {
+      for (const cmd of feature.cmds) {
+        if (typeof cmd === "object" && cmd.type === "over") {
+          expect(cmd.maxLength).toBeLessThanOrEqual(10000);
+        }
+      }
+    }
+  });
+});
+
 describe("哈希计算工具", () => {
   it("输入 abc 后实时展示六种小写十六进制哈希", () => {
     render(<App />);
@@ -139,6 +179,13 @@ describe("哈希计算工具", () => {
         "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
       ),
     ).toBeTruthy();
+  });
+
+  it("进入后自动聚焦输入框，可直接打字", () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "hash", type: "text", payload: undefined }));
+
+    expect(document.activeElement).toBe(screen.getByLabelText("输入文本"));
   });
 
   it("点击结果行复制对应哈希，over 进入时自动填入选中文字", () => {

@@ -21,7 +21,7 @@
           "type": "over",
           "label": "哈希计算",
           "minLength": 1,
-          "maxLength": 100000
+          "maxLength": 10000
         }
       ]
     },
@@ -32,7 +32,7 @@
         {
           "type": "regex",
           "label": "执行 Shell 命令",
-          "match": "^sh\\s+\\S.*$"
+          "match": "/^sh\\s+\\S.*$/"
         }
       ]
     }
