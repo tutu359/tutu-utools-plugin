@@ -8,7 +8,7 @@
 // 平台 API（utools）以懒函数注入，事件触发时才解引用 window.utools。
 
 try {
-  const createToolbox = require("./tools/toolbox.js");
+  const createToolbox = require("./toolbox.js");
   const createHash = require("./tools/hash.js");
   const createShell = require("./tools/shell.js");
 

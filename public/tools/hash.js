@@ -48,6 +48,9 @@ module.exports = function createHashHandler({ utools }) {
         utools().outPlugin();
       },
     },
-    meta: { title: "哈希计算", description: "实时计算 MD5 / SHA 哈希，回车复制" },
+    meta: {
+      title: "哈希计算",
+      description: "实时计算 MD5 / SHA 哈希，回车复制",
+    },
   };
 };

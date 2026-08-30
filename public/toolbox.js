@@ -1,4 +1,4 @@
-// toolbox.js —— 工具箱首页的模板处理器。
+// toolbox.js —— 工具箱首页的模板处理器（不属于 tools/ —— tools/ 只放具体工具）。
 // 底座把子输入框的 search/select 事件固定派发给「进入时的 feature 处理器」——
 // 因此 toolbox 扮演路由器：维护「当前激活工具」，把 search/select 委托给当前工具的处理器。
 // （教训详见 docs/lessons-real-machine.md §1.3）
