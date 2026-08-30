@@ -46,6 +46,14 @@ function loadPlugin() {
   return pluginWindow;
 }
 
+function shellHintItem() {
+  return {
+    title: "输入命令",
+    description: "在上方输入 shell 命令，回车执行",
+    command: "",
+  };
+}
+
 let pluginWindow;
 
 function enterHash(
@@ -231,11 +239,12 @@ describe("快速 Shell", () => {
     expect(hiddenWindowCount).toBe(0);
   });
 
-  it("空输入时不给出可执行条目", async () => {
+  it("空输入时只给引导条目，不含可执行命令", async () => {
     const session = enterShell();
     await session.search("   ");
 
-    expect(session.listed).toEqual([]);
+    expect(session.listed).toEqual([shellHintItem()]);
+    expect(session.listed[0].command).toBe("");
   });
 });
 
@@ -278,7 +287,7 @@ describe("工具箱首页", () => {
       "SHA-512",
     ]);
 
-    // 选「快速 Shell」：列表变为空（等待输入命令），而不是再跳一层
+    // 选「快速 Shell」：列表出现引导条目（等待输入命令），而不是空白或再跳一层
     let shellListed = [];
     pluginWindow.exports.sh.args.enter(
       { code: "sh", type: "text", payload: undefined },
@@ -286,6 +295,6 @@ describe("工具箱首页", () => {
         shellListed = items;
       },
     );
-    expect(shellListed).toEqual([]);
+    expect(shellListed).toEqual([shellHintItem()]);
   });
 });

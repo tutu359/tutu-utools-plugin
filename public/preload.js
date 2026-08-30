@@ -109,7 +109,7 @@ const shellHandler = {
       if (command) {
         runShellCommand(command, callbackSetList);
       } else {
-        callbackSetList([]);
+        callbackSetList([shellHintItem()]);
       }
     },
     search(_action, searchWord, callbackSetList) {
@@ -130,9 +130,13 @@ function commandFromPayload(payload) {
     .trim();
 }
 
+function shellHintItem() {
+  return { title: "输入命令", description: "在上方输入 shell 命令，回车执行", command: "" };
+}
+
 function shellItems(command) {
   if (!command) {
-    return [];
+    return [shellHintItem()];
   }
   return [{ title: `执行：${command}`, description: "回车执行", command }];
 }
