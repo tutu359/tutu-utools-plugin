@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,7 +20,10 @@ let hiddenWindowCount;
 
 function createRealServices() {
   const require = createRequire(import.meta.url);
-  const source = fs.readFileSync(path.join(process.cwd(), "public/preload.js"), "utf8");
+  const source = fs.readFileSync(
+    path.join(process.cwd(), "public/preload.js"),
+    "utf8",
+  );
   const pluginWindow = {};
   vm.runInNewContext(source, { window: pluginWindow, require, process });
   return pluginWindow.services;
@@ -51,8 +60,8 @@ afterEach(() => {
 describe("工具箱入口", () => {
   it("通过 toolbox 功能指令进入后列出全部已注册工具", () => {
     render(<App />);
-
-    enterPlugin({ code: "toolbox", type: "text", payload: "tutu" });
+    act(() => enterPlugin({ code: "hash", type: "text", payload: undefined }));
+    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
 
     expect(screen.getByRole("heading", { name: "工具箱" })).toBeTruthy();
     expect(screen.getByText("哈希计算")).toBeTruthy();
@@ -61,11 +70,39 @@ describe("工具箱入口", () => {
 
   it("从首页选择工具后显示对应界面", () => {
     render(<App />);
-    enterPlugin({ code: "toolbox", type: "text", payload: "tutu" });
+    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
 
     fireEvent.click(screen.getByRole("button", { name: /哈希计算/ }));
 
     expect(screen.getByRole("heading", { name: "哈希计算" })).toBeTruthy();
+  });
+});
+
+describe("重复进入工具", () => {
+  it("再次进入相同选中文字时重新填入并计算", () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
+
+    fireEvent.change(screen.getByLabelText("输入文本"), {
+      target: { value: "changed" },
+    });
+    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
+
+    expect(screen.getByLabelText("输入文本").value).toBe("abc");
+    expect(screen.getByText("900150983cd24fb0d6963f7d28e17f72")).toBeTruthy();
+  });
+
+  it("再次执行相同命令时重新展开结果", async () => {
+    render(<App />);
+    act(() =>
+      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
+    );
+    await waitFor(() => expect(expandedHeights.length).toBe(1));
+
+    act(() =>
+      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
+    );
+    await waitFor(() => expect(expandedHeights.length).toBe(2));
   });
 });
 
@@ -79,16 +116,34 @@ describe("哈希计算工具", () => {
     });
 
     expect(screen.getByText("900150983cd24fb0d6963f7d28e17f72")).toBeTruthy();
-    expect(screen.getByText("a9993e364706816aba3e25717850c26c9cd0d89d")).toBeTruthy();
-    expect(screen.getByText("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7")).toBeTruthy();
-    expect(screen.getByText("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")).toBeTruthy();
-    expect(screen.getByText("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7")).toBeTruthy();
-    expect(screen.getByText("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")).toBeTruthy();
+    expect(
+      screen.getByText("a9993e364706816aba3e25717850c26c9cd0d89d"),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+      ),
+    ).toBeTruthy();
   });
 
   it("点击结果行复制对应哈希，over 进入时自动填入选中文字", () => {
     render(<App />);
-    act(() => enterPlugin({ code: "hash-over", type: "over", payload: "abc" }));
+    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
 
     expect(screen.getByLabelText("输入文本").value).toBe("abc");
     fireEvent.click(screen.getByRole("button", { name: /MD5/ }));
@@ -100,7 +155,9 @@ describe("哈希计算工具", () => {
 describe("快速 Shell 工具", () => {
   it("执行带输出的命令后在搜索框下方展开标准输出", async () => {
     render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }));
+    act(() =>
+      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
+    );
 
     await waitFor(() => expect(screen.getByText("hello")).toBeTruthy());
 
@@ -114,7 +171,9 @@ describe("快速 Shell 工具", () => {
     act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh pwd" }));
 
     await waitFor(() => expect(screen.getByLabelText("命令结果")).toBeTruthy());
-    expect(screen.getByLabelText("命令结果").textContent).toContain(process.env.HOME);
+    expect(screen.getByLabelText("命令结果").textContent).toContain(
+      process.env.HOME,
+    );
 
     const expansionCount = expandedHeights.length;
     cleanup();
@@ -124,9 +183,19 @@ describe("快速 Shell 工具", () => {
     expect(expandedHeights.length).toBe(expansionCount);
   });
 
-  it("按 Esc 或关闭动作隐藏快速 Shell", async () => {
+  it("失败命令即使没有输出也显示失败状态", async () => {
     render(<App />);
     act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh false" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("退出码：1")).toBeTruthy(),
+    );
+    expect(hiddenWindowCount).toBe(0);
+  });
+
+  it("按 Esc 或关闭动作隐藏快速 Shell", async () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh true" }));
     await waitFor(() => expect(hiddenWindowCount).toBe(1));
 
     fireEvent.keyDown(window, { key: "Escape" });
