@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,6 +9,8 @@ import App from "../src/App.jsx";
 
 let enterPlugin;
 let copiedValues;
+let expandedHeights;
+let hiddenWindowCount;
 
 function createRealServices() {
   const require = createRequire(import.meta.url);
@@ -21,12 +23,20 @@ function createRealServices() {
 beforeEach(() => {
   enterPlugin = undefined;
   copiedValues = [];
+  expandedHeights = [];
+  hiddenWindowCount = 0;
   window.utools = {
     onPluginEnter(callback) {
       enterPlugin = callback;
     },
     copyText(value) {
       copiedValues.push(value);
+    },
+    setExpendHeight(height) {
+      expandedHeights.push(height);
+    },
+    hideMainWindow() {
+      hiddenWindowCount += 1;
     },
   };
   window.services = createRealServices();
@@ -84,5 +94,44 @@ describe("哈希计算工具", () => {
     fireEvent.click(screen.getByRole("button", { name: /MD5/ }));
 
     expect(copiedValues).toEqual(["900150983cd24fb0d6963f7d28e17f72"]);
+  });
+});
+
+describe("快速 Shell 工具", () => {
+  it("执行带输出的命令后在搜索框下方展开标准输出", async () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }));
+
+    await waitFor(() => expect(screen.getByText("hello")).toBeTruthy());
+
+    expect(screen.getByText("标准输出")).toBeTruthy();
+    expect(expandedHeights.length).toBe(1);
+    expect(hiddenWindowCount).toBe(0);
+  });
+
+  it("从家目录执行 pwd，并在无输出命令结束后静默隐藏", async () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh pwd" }));
+
+    await waitFor(() => expect(screen.getByLabelText("命令结果")).toBeTruthy());
+    expect(screen.getByLabelText("命令结果").textContent).toContain(process.env.HOME);
+
+    const expansionCount = expandedHeights.length;
+    cleanup();
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh true" }));
+    await waitFor(() => expect(hiddenWindowCount).toBe(1));
+    expect(expandedHeights.length).toBe(expansionCount);
+  });
+
+  it("按 Esc 或关闭动作隐藏快速 Shell", async () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh false" }));
+    await waitFor(() => expect(hiddenWindowCount).toBe(1));
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: "关闭结果" }));
+
+    expect(hiddenWindowCount).toBe(3);
   });
 });

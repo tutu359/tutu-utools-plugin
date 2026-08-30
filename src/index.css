@@ -137,6 +137,48 @@ h1 {
   font-size: 11px;
 }
 
+.shell-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shell-heading button {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #444;
+  background: #fff;
+}
+
+.shell-result {
+  margin-top: 16px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.shell-result h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.shell-result pre {
+  margin: 0 0 12px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.shell-status {
+  margin: 0;
+  color: #666;
+  font-size: 12px;
+}
+
 @media (max-width: 600px) {
   .hash-layout {
     grid-template-columns: 1fr;
