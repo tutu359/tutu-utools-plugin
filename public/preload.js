@@ -131,7 +131,11 @@ function commandFromPayload(payload) {
 }
 
 function shellHintItem() {
-  return { title: "输入命令", description: "在上方输入 shell 命令，回车执行", command: "" };
+  return {
+    title: "输入命令",
+    description: "在上方输入 shell 命令，回车执行",
+    command: "",
+  };
 }
 
 function shellItems(command) {
