@@ -125,6 +125,24 @@ describe("plugin.json 入口声明", () => {
     }
   });
 
+  it("sh 功能同时具备关键字与正则匹配两种入口", () => {
+    const pluginJson = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
+    );
+
+    const shFeature = pluginJson.features.find(
+      (feature) => feature.code === "sh",
+    );
+
+    expect(shFeature).toBeTruthy();
+    expect(shFeature.cmds).toContain("sh");
+    expect(
+      shFeature.cmds.some(
+        (cmd) => typeof cmd === "object" && cmd.type === "regex",
+      ),
+    ).toBe(true);
+  });
+
   it("over 匹配指令的 maxLength 不超过官方上限", () => {
     const pluginJson = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
@@ -258,6 +276,39 @@ describe("快速 Shell 工具", () => {
 
     await waitFor(() => expect(screen.getByText("退出码：1")).toBeTruthy());
     expect(hiddenWindowCount).toBe(0);
+  });
+
+  it("通过 sh 关键字带参数进入时直接执行命令", async () => {
+    render(<App />);
+    act(() =>
+      enterPlugin({ code: "sh", type: "text", payload: "echo hello" }),
+    );
+
+    await waitFor(() => expect(screen.getByText("hello")).toBeTruthy());
+    expect(expandedHeights.length).toBe(1);
+  });
+
+  it("空参数进入快速 Shell 不执行也不隐藏", () => {
+    render(<App />);
+    act(() =>
+      enterPlugin({ code: "sh", type: "text", payload: undefined }),
+    );
+
+    expect(screen.getByRole("heading", { name: "快速 Shell" })).toBeTruthy();
+    expect(screen.queryByLabelText("命令结果")).toBeNull();
+    expect(hiddenWindowCount).toBe(0);
+  });
+
+  it("在页面命令输入框内执行命令", async () => {
+    render(<App />);
+    act(() => enterPlugin({ code: "sh", type: "text", payload: undefined }));
+
+    fireEvent.change(screen.getByLabelText("命令输入"), {
+      target: { value: "echo page" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "执行" }));
+
+    await waitFor(() => expect(screen.getByText("page")).toBeTruthy());
   });
 
   it("按 Esc 或关闭动作隐藏快速 Shell", async () => {

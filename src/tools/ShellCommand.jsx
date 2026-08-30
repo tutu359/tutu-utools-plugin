@@ -1,37 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ToolPage from "./ToolPage.jsx";
 
 function commandFromPayload(payload) {
-  return String(payload ?? "").replace(/^\s*sh\s+/, "");
+  return String(payload ?? "")
+    .replace(/^\s*sh\s+/, "")
+    .trim();
 }
 
-export default function ShellCommand({ entryType, payload, entrySequence }) {
+export default function ShellCommand({ payload, entrySequence }) {
   const [result, setResult] = useState(null);
+  const [draft, setDraft] = useState("");
+  const draftRef = useRef(null);
+  const disposedRef = useRef(false);
 
-  useEffect(() => {
-    if (entryType !== "regex") return undefined;
-
-    let active = true;
-    const command = commandFromPayload(payload);
+  function runCommand(command) {
+    if (!command) return;
     setResult(null);
-
     const execution = window.services?.executeShell?.(command);
-    if (!execution) return undefined;
+    if (!execution) return;
 
     execution.then((shellResult) => {
-      if (!active) return;
-
+      if (disposedRef.current) return;
       setResult(shellResult);
-      if (shellResult.stdout || shellResult.stderr || shellResult.exitCode !== 0) {
-        window.utools?.setExpendHeight?.(180);
+      if (
+        shellResult.stdout ||
+        shellResult.stderr ||
+        shellResult.exitCode !== 0
+      ) {
+        window.utools?.setExpendHeight?.(260);
       } else {
         window.utools?.hideMainWindow?.();
       }
     });
+  }
 
+  useEffect(() => {
+    disposedRef.current = false;
+    draftRef.current?.focus();
+    const command = commandFromPayload(payload);
+    if (command) {
+      runCommand(command);
+    }
     return () => {
-      active = false;
+      disposedRef.current = true;
     };
+    // entrySequence 变化代表一次新的进入，payload 随之更新
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entrySequence]);
 
   useEffect(() => {
@@ -58,6 +72,23 @@ export default function ShellCommand({ entryType, payload, entrySequence }) {
         <h1 id="shell-title">快速 Shell</h1>
         <button type="button" onClick={close} aria-label="关闭结果">
           关闭
+        </button>
+      </div>
+      <div className="shell-command-row">
+        <input
+          ref={draftRef}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              runCommand(draft.trim());
+            }
+          }}
+          placeholder="输入 shell 命令，如 ls ~/Dev"
+          aria-label="命令输入"
+        />
+        <button type="button" onClick={() => runCommand(draft.trim())}>
+          执行
         </button>
       </div>
       {hasVisibleResult ? (

@@ -46,6 +46,7 @@ pnpm build
 - `public/preload.js` 必须使用 CommonJS，且不能打包、压缩或混淆。
 - React 页面通过 `window.utools` 调用 uTools API，通过 `window.services` 调用 `preload.js` 暴露的本地能力。
 - 新增 uTools 功能指令时，修改 `public/plugin.json` 的 `features`，每个 `code` 必须唯一。
+- `dist/` 下必须带一个 `type: "commonjs"` 的 `package.json`（由 `public/package.json` 构建时复制），否则在部分 uTools 内核上 preload 会因最近的 package.json 声明为 ESM 而静默加载失败（页面表现为 `window.services` 不存在）。
 
 ## 官方文档
 

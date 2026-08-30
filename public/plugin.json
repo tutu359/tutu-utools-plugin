@@ -29,6 +29,7 @@
       "code": "sh",
       "explain": "执行 Shell 命令",
       "cmds": [
+        "sh",
         {
           "type": "regex",
           "label": "执行 Shell 命令",

@@ -142,6 +142,32 @@ h1 {
   justify-content: space-between;
 }
 
+.shell-command-row {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.shell-command-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.shell-command-row button {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #444;
+  background: #fff;
+}
+
+.shell-command-row button:hover {
+  border-color: #888;
+}
+
 .shell-heading button {
   padding: 4px 8px;
   border: 1px solid #ccc;

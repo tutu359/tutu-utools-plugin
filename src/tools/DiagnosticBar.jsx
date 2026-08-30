@@ -9,7 +9,6 @@ export default function DiagnosticBar() {
     : preloadError
       ? `未加载 ✗（${preloadError}）`
       : "未加载 ✗";
-
   return (
     <p className="diagnostic-bar">
       {`本地服务层：${servicesLabel} · uTools 接口：${
