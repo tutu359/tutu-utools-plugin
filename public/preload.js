@@ -169,6 +169,7 @@ function runShellCommand(command, callbackSetList) {
 }
 
 // 工具箱首页：列出全部工具，回车跳转
+// 工具箱首页：列出全部工具，回车直接进入目标工具的列表模式（无底座二次回车）
 const toolboxHandler = {
   mode: "list",
   args: {
@@ -184,8 +185,15 @@ const toolboxHandler = {
         ),
       );
     },
-    select(_action, itemData) {
-      window.utools.redirect(itemData.keyword);
+    select(_action, itemData, callbackSetList) {
+      // 同插件内直接调用目标工具的模板处理器：列表原地切换为目标工具，无需二次回车
+      const handler = window.exports[itemData.code];
+      if (!handler) return;
+      window.utools.setSubInputValue("");
+      handler.args.enter(
+        { code: itemData.code, type: "text", payload: itemData.payload },
+        callbackSetList,
+      );
     },
   },
 };
@@ -195,12 +203,12 @@ function toolboxItems() {
     {
       title: "哈希计算",
       description: "实时计算 MD5 / SHA 哈希，回车复制",
-      keyword: "hash",
+      code: "hash",
     },
     {
       title: "快速 Shell",
       description: "在搜索框内输入并执行 shell 命令",
-      keyword: "sh",
+      code: "sh",
     },
   ];
 }

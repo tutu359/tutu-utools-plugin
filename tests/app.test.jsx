@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 const copiedValues = [];
 const expandedHeights = [];
 let hiddenWindowCount;
+let subInputValues;
 
 function loadPlugin() {
   const require = createRequire(import.meta.url);
@@ -24,6 +25,9 @@ function loadPlugin() {
       },
       hideMainWindow() {
         hiddenWindowCount += 1;
+      },
+      setSubInputValue(value) {
+        subInputValues.push(value);
       },
       outPlugin() {
         hiddenWindowCount += 1;
@@ -98,6 +102,7 @@ beforeEach(() => {
   copiedValues.length = 0;
   expandedHeights.length = 0;
   hiddenWindowCount = 0;
+  subInputValues = [];
   pluginWindow = loadPlugin();
 });
 
@@ -250,14 +255,7 @@ describe("工具箱首页", () => {
     expect(names).not.toContain("工具箱");
   });
 
-  it("回车选择工具后跳转到对应的功能指令关键字", () => {
-    const redirected = [];
-    const savedRedirect = pluginWindow.utools.redirect;
-    pluginWindow.utools.redirect = (label) => {
-      redirected.push(label);
-      return true;
-    };
-
+  it("回车选择工具后原地切换为目标工具的列表，无需二次回车", () => {
     let listed = [];
     pluginWindow.exports.toolbox.args.enter(
       { code: "toolbox", type: "text", payload: undefined },
@@ -265,9 +263,29 @@ describe("工具箱首页", () => {
         listed = items;
       },
     );
-    pluginWindow.exports.toolbox.args.select({}, listed[0], () => {});
-    pluginWindow.exports.toolbox.args.select({}, listed[1], () => {});
 
-    expect(redirected).toEqual(["hash", "sh"]);
+    // 选「哈希计算」：列表原地变为六种哈希行
+    pluginWindow.exports.toolbox.args.select({}, listed[0], (items) => {
+      listed = items;
+    });
+
+    expect(listed.map((item) => item.title)).toEqual([
+      "MD5",
+      "SHA-1",
+      "SHA-224",
+      "SHA-256",
+      "SHA-384",
+      "SHA-512",
+    ]);
+
+    // 选「快速 Shell」：列表变为空（等待输入命令），而不是再跳一层
+    let shellListed = [];
+    pluginWindow.exports.sh.args.enter(
+      { code: "sh", type: "text", payload: undefined },
+      (items) => {
+        shellListed = items;
+      },
+    );
+    expect(shellListed).toEqual([]);
   });
 });
