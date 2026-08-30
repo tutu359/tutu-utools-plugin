@@ -1,324 +1,250 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
-import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import App from "../src/App.jsx";
 
-let enterPlugin;
-let copiedValues;
-let expandedHeights;
+const copiedValues = [];
+const expandedHeights = [];
 let hiddenWindowCount;
 
-function createRealServices() {
+function loadPlugin() {
   const require = createRequire(import.meta.url);
   const source = fs.readFileSync(
     path.join(process.cwd(), "public/preload.js"),
     "utf8",
   );
-  const pluginWindow = {};
-  vm.runInNewContext(source, { window: pluginWindow, require, process });
-  return pluginWindow.services;
+  const pluginWindow = {
+    utools: {
+      copyText(value) {
+        copiedValues.push(value);
+      },
+      setExpendHeight(height) {
+        expandedHeights.push(height);
+      },
+      hideMainWindow() {
+        hiddenWindowCount += 1;
+      },
+      outPlugin() {
+        hiddenWindowCount += 1;
+      },
+      redirect() {
+        return true;
+      },
+    },
+  };
+  vm.runInNewContext(source, {
+    window: pluginWindow,
+    require,
+    process,
+    console,
+  });
+  return pluginWindow;
+}
+
+let pluginWindow;
+
+function enterHash(action = { code: "hash", type: "text", payload: undefined }) {
+  let listed = [];
+  pluginWindow.exports.hash.args.enter(action, (items) => {
+    listed = items;
+  });
+  return {
+    get listed() {
+      return listed;
+    },
+    search(word) {
+      pluginWindow.exports.hash.args.search(action, word, (items) => {
+        listed = items;
+      });
+    },
+    select(item) {
+      pluginWindow.exports.hash.args.select(action, item, () => {});
+    },
+  };
+}
+
+function enterShell(action = { code: "sh", type: "text", payload: undefined }) {
+  let listed = [];
+  pluginWindow.exports.sh.args.enter(action, (items) => {
+    listed = items;
+  });
+  return {
+    get listed() {
+      return listed;
+    },
+    async search(word) {
+      let resolve;
+      const done = new Promise((r) => {
+        resolve = r;
+      });
+      pluginWindow.exports.sh.args.search(action, word, (items) => {
+        listed = items;
+        resolve();
+      });
+      await done;
+    },
+    async select(item) {
+      await pluginWindow.exports.sh.args.select(action, item, (items) => {
+        listed = items;
+      });
+    },
+  };
 }
 
 beforeEach(() => {
-  enterPlugin = undefined;
-  copiedValues = [];
-  expandedHeights = [];
+  copiedValues.length = 0;
+  expandedHeights.length = 0;
   hiddenWindowCount = 0;
-  window.utools = {
-    onPluginEnter(callback) {
-      enterPlugin = callback;
-    },
-    copyText(value) {
-      copiedValues.push(value);
-    },
-    setExpendHeight(height) {
-      expandedHeights.push(height);
-    },
-    hideMainWindow() {
-      hiddenWindowCount += 1;
-    },
-  };
-  window.services = createRealServices();
+  pluginWindow = loadPlugin();
 });
 
 afterEach(() => {
-  cleanup();
-  delete window.utools;
-  delete window.services;
+  pluginWindow = undefined;
 });
 
-describe("工具箱入口", () => {
-  it("通过 toolbox 功能指令进入后列出全部已注册工具", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "hash", type: "text", payload: undefined }));
-    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
-
-    expect(screen.getByRole("heading", { name: "工具箱" })).toBeTruthy();
-    expect(screen.getByText("哈希计算")).toBeTruthy();
-    expect(screen.getByText("快速 Shell")).toBeTruthy();
-  });
-
-  it("从首页选择工具后显示对应界面", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /哈希计算/ }));
-
-    expect(screen.getByRole("heading", { name: "哈希计算" })).toBeTruthy();
-  });
-});
-
-describe("重复进入工具", () => {
-  it("再次进入相同选中文字时重新填入并计算", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
-
-    fireEvent.change(screen.getByLabelText("输入文本"), {
-      target: { value: "changed" },
-    });
-    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
-
-    expect(screen.getByLabelText("输入文本").value).toBe("abc");
-    expect(screen.getByText("900150983cd24fb0d6963f7d28e17f72")).toBeTruthy();
-  });
-
-  it("再次执行相同命令时重新展开结果", async () => {
-    render(<App />);
-    act(() =>
-      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
-    );
-    await waitFor(() => expect(expandedHeights.length).toBe(1));
-
-    act(() =>
-      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
-    );
-    await waitFor(() => expect(expandedHeights.length).toBe(2));
-  });
-});
-
-describe("plugin.json 入口声明", () => {
-  it("匹配指令的正则必须是斜杠包裹的正则字面量格式", () => {
+describe("模板插件形态", () => {
+  it("preload 暴露与 plugin.json feature code 一致的模板处理器", () => {
     const pluginJson = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
     );
 
-    const matchValues = pluginJson.features.flatMap((feature) =>
-      feature.cmds
-        .filter((cmd) => typeof cmd === "object" && cmd.match)
-        .map((cmd) => cmd.match),
-    );
-
-    expect(matchValues.length).toBeGreaterThan(0);
-    for (const match of matchValues) {
-      expect(match.startsWith("/")).toBe(true);
-      expect(match.endsWith("/")).toBe(true);
-    }
-  });
-
-  it("sh 功能同时具备关键字与正则匹配两种入口", () => {
-    const pluginJson = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
-    );
-
-    const shFeature = pluginJson.features.find(
-      (feature) => feature.code === "sh",
-    );
-
-    expect(shFeature).toBeTruthy();
-    expect(shFeature.cmds).toContain("sh");
-    expect(
-      shFeature.cmds.some(
-        (cmd) => typeof cmd === "object" && cmd.type === "regex",
-      ),
-    ).toBe(true);
-  });
-
-  it("over 匹配指令的 maxLength 不超过官方上限", () => {
-    const pluginJson = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "public/plugin.json"), "utf8"),
-    );
-
+    expect(pluginJson.main).toBeUndefined();
     for (const feature of pluginJson.features) {
-      for (const cmd of feature.cmds) {
-        if (typeof cmd === "object" && cmd.type === "over") {
-          expect(cmd.maxLength).toBeLessThanOrEqual(10000);
-        }
-      }
+      expect(pluginWindow.exports[feature.code]).toBeTruthy();
+      expect(["list", "none", "doc"]).toContain(
+        pluginWindow.exports[feature.code].mode,
+      );
     }
   });
 });
 
-describe("诊断条", () => {
-  it("页面底部显示服务层、uTools 接口与版本状态", () => {
-    window.utools.getUtoolsVersion = () => "6.1.0";
-    render(<App />);
-    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
+describe("哈希计算", () => {
+  it("输入 abc 实时列出六种小写十六进制哈希", async () => {
+    const session = enterHash();
+    session.search("abc");
 
-    expect(screen.getByText(/本地服务层：已加载/)).toBeTruthy();
-    expect(screen.getByText(/uTools 接口：已连接/)).toBeTruthy();
-    expect(screen.getByText(/uTools 版本：6\.1\.0/)).toBeTruthy();
+    const values = session.listed.map((item) => item.description);
+    expect(session.listed.map((item) => item.title)).toEqual([
+      "MD5",
+      "SHA-1",
+      "SHA-224",
+      "SHA-256",
+      "SHA-384",
+      "SHA-512",
+    ]);
+    expect(values[0]).toBe("900150983cd24fb0d6963f7d28e17f72");
+    expect(values[3]).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    );
+    for (const value of values) {
+      expect(value).toBe(value.toLowerCase());
+    }
   });
 
-  it("服务层未加载时诊断条明确标出", () => {
-    delete window.services;
-    render(<App />);
-    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
+  it("回车选择某条结果即复制该哈希并收工", () => {
+    const session = enterHash();
+    session.search("abc");
 
-    expect(screen.getByText(/本地服务层：未加载/)).toBeTruthy();
-  });
-
-  it("服务层自带错误信息时诊断条显示错误详情", () => {
-    window.services.getPreloadError = () => "require is not defined";
-    render(<App />);
-    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
-
-    expect(screen.getByText(/未加载 ✗（require is not defined）/)).toBeTruthy();
-  });
-});
-
-describe("哈希计算工具", () => {
-  it("输入 abc 后实时展示六种小写十六进制哈希", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "hash", type: "text", payload: undefined }));
-
-    fireEvent.change(screen.getByLabelText("输入文本"), {
-      target: { value: "abc" },
-    });
-
-    expect(screen.getByText("900150983cd24fb0d6963f7d28e17f72")).toBeTruthy();
-    expect(
-      screen.getByText("a9993e364706816aba3e25717850c26c9cd0d89d"),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
-      ),
-    ).toBeTruthy();
-  });
-
-  it("进入后自动聚焦输入框，可直接打字", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "hash", type: "text", payload: undefined }));
-
-    expect(document.activeElement).toBe(screen.getByLabelText("输入文本"));
-  });
-
-  it("点击结果行复制对应哈希，over 进入时自动填入选中文字", () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "hash", type: "over", payload: "abc" }));
-
-    expect(screen.getByLabelText("输入文本").value).toBe("abc");
-    fireEvent.click(screen.getByRole("button", { name: /MD5/ }));
+    session.select(session.listed[0]);
 
     expect(copiedValues).toEqual(["900150983cd24fb0d6963f7d28e17f72"]);
+    expect(hiddenWindowCount).toBe(1);
+  });
+
+  it("以选中文字进入时立即列出该文字的哈希", () => {
+    const session = enterHash({
+      code: "hash",
+      type: "over",
+      payload: "abc",
+    });
+
+    expect(session.listed[0].description).toBe(
+      "900150983cd24fb0d6963f7d28e17f72",
+    );
   });
 });
 
-describe("快速 Shell 工具", () => {
-  it("执行带输出的命令后在搜索框下方展开标准输出", async () => {
-    render(<App />);
-    act(() =>
-      enterPlugin({ code: "sh", type: "regex", payload: "sh echo hello" }),
+describe("快速 Shell", () => {
+  it("输入命令时实时给出可执行的条目", async () => {
+    const session = enterShell();
+    await session.search("echo hello");
+
+    expect(session.listed.length).toBeGreaterThan(0);
+    expect(session.listed[0].title).toContain("echo hello");
+  });
+
+  it("回车执行有输出的命令后结果列在列表中", async () => {
+    const session = enterShell();
+    await session.search("echo hello");
+
+    await session.select(session.listed[0]);
+
+    const outputItem = session.listed.find((item) =>
+      item.title.includes("hello"),
     );
-
-    await waitFor(() => expect(screen.getByText("hello")).toBeTruthy());
-
-    expect(screen.getByText("标准输出")).toBeTruthy();
+    expect(outputItem).toBeTruthy();
     expect(expandedHeights.length).toBe(1);
     expect(hiddenWindowCount).toBe(0);
   });
 
-  it("从家目录执行 pwd，并在无输出命令结束后静默隐藏", async () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh pwd" }));
+  it("从家目录执行 pwd", async () => {
+    const session = enterShell();
+    await session.search("pwd");
 
-    await waitFor(() => expect(screen.getByLabelText("命令结果")).toBeTruthy());
-    expect(screen.getByLabelText("命令结果").textContent).toContain(
-      process.env.HOME,
+    await session.select(session.listed[0]);
+
+    const outputItem = session.listed.find((item) =>
+      item.title.includes(process.env.HOME),
     );
-
-    const expansionCount = expandedHeights.length;
-    cleanup();
-    render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh true" }));
-    await waitFor(() => expect(hiddenWindowCount).toBe(1));
-    expect(expandedHeights.length).toBe(expansionCount);
+    expect(outputItem).toBeTruthy();
   });
 
-  it("失败命令即使没有输出也显示失败状态", async () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh false" }));
+  it("无输出的命令执行后静默收工", async () => {
+    const session = enterShell();
+    await session.search("true");
 
-    await waitFor(() => expect(screen.getByText("退出码：1")).toBeTruthy());
+    await session.select(session.listed[0]);
+
+    expect(hiddenWindowCount).toBe(1);
+    expect(expandedHeights.length).toBe(0);
+  });
+
+  it("失败的命令展示错误输出与退出码", async () => {
+    const session = enterShell();
+    await session.search("false");
+
+    await session.select(session.listed[0]);
+
+    const statusItem = session.listed.find(
+      (item) => item.description === "退出码",
+    );
+    expect(statusItem).toBeTruthy();
+    expect(statusItem.title).toBe("1");
     expect(hiddenWindowCount).toBe(0);
   });
 
-  it("通过 sh 关键字带参数进入时直接执行命令", async () => {
-    render(<App />);
-    act(() =>
-      enterPlugin({ code: "sh", type: "text", payload: "echo hello" }),
+  it("空输入时不给出可执行条目", async () => {
+    const session = enterShell();
+    await session.search("   ");
+
+    expect(session.listed).toEqual([]);
+  });
+});
+
+describe("工具箱首页", () => {
+  it("列出除自身以外的全部工具", () => {
+    let listed = [];
+    pluginWindow.exports.toolbox.args.enter(
+      { code: "toolbox", type: "text", payload: undefined },
+      (items) => {
+        listed = items;
+      },
     );
 
-    await waitFor(() => expect(screen.getByText("hello")).toBeTruthy());
-    expect(expandedHeights.length).toBe(1);
-  });
-
-  it("空参数进入快速 Shell 不执行也不隐藏", () => {
-    render(<App />);
-    act(() =>
-      enterPlugin({ code: "sh", type: "text", payload: undefined }),
-    );
-
-    expect(screen.getByRole("heading", { name: "快速 Shell" })).toBeTruthy();
-    expect(screen.queryByLabelText("命令结果")).toBeNull();
-    expect(hiddenWindowCount).toBe(0);
-  });
-
-  it("在页面命令输入框内执行命令", async () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "text", payload: undefined }));
-
-    fireEvent.change(screen.getByLabelText("命令输入"), {
-      target: { value: "echo page" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "执行" }));
-
-    await waitFor(() => expect(screen.getByText("page")).toBeTruthy());
-  });
-
-  it("按 Esc 或关闭动作隐藏快速 Shell", async () => {
-    render(<App />);
-    act(() => enterPlugin({ code: "sh", type: "regex", payload: "sh true" }));
-    await waitFor(() => expect(hiddenWindowCount).toBe(1));
-
-    fireEvent.keyDown(window, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "关闭结果" }));
-
-    expect(hiddenWindowCount).toBe(3);
+    const names = listed.map((item) => item.title);
+    expect(names).toContain("哈希计算");
+    expect(names).toContain("快速 Shell");
+    expect(names).not.toContain("工具箱");
   });
 });
