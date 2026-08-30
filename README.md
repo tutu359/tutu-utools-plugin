@@ -1,7 +1,7 @@
 # tutu-utools-plugin
 
 「tutu 工具箱」—— uTools **模板插件**（列表模式），个人自用，逐步生长。
-领域词汇见 [CONTEXT.md](CONTEXT.md)，架构决定见 [docs/adr/](docs/adr/)（新会话上手必读这两处）。
+领域词汇见 [CONTEXT.md](CONTEXT.md)，架构决定见 [docs/adr/](docs/adr/)，真机踩坑与教训见 [docs/lessons-real-machine.md](docs/lessons-real-machine.md)（新会话上手与改代码前必读这三处）。
 
 ## 当前形态（ADR 0001：模板模式）
 
