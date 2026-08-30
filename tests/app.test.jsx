@@ -12,9 +12,7 @@ let subInputValues;
 function loadPlugin() {
   // require 基准必须是 preload.js 所在目录：preload 内部用相对路径 require("./tools/...")，
   // 相对的是它自己的位置 —— 与 uTools 真机加载语义一致
-  const require = createRequire(
-    path.join(process.cwd(), "public/preload.js"),
-  );
+  const require = createRequire(path.join(process.cwd(), "public/preload.js"));
   const source = fs.readFileSync(
     path.join(process.cwd(), "public/preload.js"),
     "utf8",

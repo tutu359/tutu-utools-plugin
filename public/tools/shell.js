@@ -1,8 +1,29 @@
-// shell.js —— 快速 Shell 工具的模板处理器。
+// shell.js —— 快速 Shell 工具：能力（executeShell）与模板处理器同文件。
 // 交互：框内输入命令回车执行；stdout/stderr/退出码以列表展示；
 //       无输出成功静默收工，失败展示退出码；支持「sh <命令>」带参直达（regex 匹配指令）。
 // 平台 API 由 preload 装配时注入（工具模块作用域里没有 window 全局，不能直接摸 window.utools）。
-const { executeShell } = require("./services.js");
+const { execFile } = require("child_process");
+const os = require("os");
+
+function executeShell(command) {
+  const shell = process.env.SHELL || "/bin/sh";
+
+  return new Promise((resolve) => {
+    execFile(
+      shell,
+      ["-l", "-c", command],
+      { cwd: os.homedir(), encoding: "utf8" },
+      (error, stdout, stderr) => {
+        const exitCode = error
+          ? typeof error.code === "number"
+            ? error.code
+            : 1
+          : 0;
+        resolve({ stdout, stderr, exitCode });
+      },
+    );
+  });
+}
 
 function commandFromPayload(payload) {
   return String(payload ?? "")
@@ -54,11 +75,6 @@ function runShellCommand(command, callbackSetList, utools) {
     }
   });
 }
-
-module.exports.meta = {
-  title: "快速 Shell",
-  description: "在搜索框内输入并执行 shell 命令",
-};
 
 module.exports = function createShellHandler({ utools }) {
   return {

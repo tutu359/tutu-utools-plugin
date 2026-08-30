@@ -1,8 +1,24 @@
-// hash.js —— 哈希计算工具的模板处理器。
+// hash.js —— 哈希计算工具：能力（hashText）与模板处理器同文件，自包含。
 // 交互：输入实时列出六种哈希（小写 hex），回车复制收工；支持选中文字直达（over）。
-// 平台依赖由 preload 装配时注入（context.utools 是取 window.utools 的懒函数），
-// 工具模块经 Node require 加载，作用域里没有 window 全局，不能直接摸 window.utools。
-const { hashText } = require("./services.js");
+// 平台 API 由 preload 装配时注入（工具模块作用域里没有 window 全局，不能直接摸 window.utools）。
+const crypto = require("crypto");
+
+const hashAlgorithms = [
+  ["md5", "MD5"],
+  ["sha1", "SHA-1"],
+  ["sha224", "SHA-224"],
+  ["sha256", "SHA-256"],
+  ["sha384", "SHA-384"],
+  ["sha512", "SHA-512"],
+];
+
+function hashText(text) {
+  return hashAlgorithms.map(([id, label]) => ({
+    id,
+    label,
+    value: crypto.createHash(id).update(String(text), "utf8").digest("hex"),
+  }));
+}
 
 function hashItems(text) {
   return hashText(text).map(({ label, value }) => ({
