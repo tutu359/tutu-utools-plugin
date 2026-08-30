@@ -158,6 +158,14 @@ describe("诊断条", () => {
 
     expect(screen.getByText(/本地服务层：未加载/)).toBeTruthy();
   });
+
+  it("服务层自带错误信息时诊断条显示错误详情", () => {
+    window.services.getPreloadError = () => "require is not defined";
+    render(<App />);
+    act(() => enterPlugin({ code: "toolbox", type: "text", payload: "tutu" }));
+
+    expect(screen.getByText(/未加载 ✗（require is not defined）/)).toBeTruthy();
+  });
 });
 
 describe("哈希计算工具", () => {
