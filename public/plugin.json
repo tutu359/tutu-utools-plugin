@@ -1,0 +1,16 @@
+{
+  "main": "index.html",
+  "logo": "logo.png",
+  "preload": "preload.js",
+  "pluginSetting": {
+    "single": true,
+    "height": 400
+  },
+  "features": [
+    {
+      "code": "hello",
+      "explain": "我的第一个 uTools 插件功能",
+      "cmds": ["tutu插件", "hello"]
+    }
+  ]
+}
