@@ -80,3 +80,65 @@ h1 {
   color: #888;
   font-size: 12px;
 }
+
+.hash-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 8px 16px;
+}
+
+.hash-input-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hash-layout textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.hash-results {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.hash-result {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid #e1e1e1;
+  border-radius: 3px;
+  color: #222;
+  background: #fff;
+  text-align: left;
+}
+
+.hash-result:hover,
+.hash-result:focus-visible {
+  border-color: #888;
+}
+
+.hash-result > span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hash-result code {
+  overflow-wrap: anywhere;
+  color: #333;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .hash-layout {
+    grid-template-columns: 1fr;
+  }
+}

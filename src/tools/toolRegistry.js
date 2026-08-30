@@ -13,6 +13,7 @@ export const toolRegistry = [
     code: "hash",
     keyword: "hash",
     name: "哈希计算",
+    entryCodes: ["hash-over"],
     component: HashCalculator,
   },
   {
@@ -24,5 +25,9 @@ export const toolRegistry = [
 ];
 
 export function getTool(code) {
-  return toolRegistry.find((tool) => tool.code === code) ?? toolRegistry[0];
+  return (
+    toolRegistry.find(
+      (tool) => tool.code === code || tool.entryCodes?.includes(code),
+    ) ?? toolRegistry[0]
+  );
 }
